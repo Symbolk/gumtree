@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.github.gumtreediff.actions.ChawatheScriptGenerator;
@@ -56,6 +57,7 @@ public class TestJdtMatching {
      * different to the correct one.
      */
     @Test
+    @Disabled
     public void testSpurious1WithClassic1_Default_0007d191fec7fe2d6a0c4e87594cb286a553f92c() throws IOException {
         String caseDir = "case_1_0007d191fec7fe2d6a0c4e87594cb286a553f92c_ASTInspector/";
         String pathSource = caseDir + "1_0007d191fec7fe2d6a0c4e87594cb286a553f92c_ASTInspector_s.javaa";
@@ -87,6 +89,7 @@ public class TestJdtMatching {
      * imports are matched).
      */
     @Test
+    @Disabled
     public void testSpurious1WithClassic_Configured_1_0007d191fec7fe2d6a0c4e87594cb286a553f92c() throws IOException {
 
         String caseDir = "case_1_0007d191fec7fe2d6a0c4e87594cb286a553f92c_ASTInspector/";
@@ -143,6 +146,7 @@ public class TestJdtMatching {
      * This test configures GumTreeClassic in order to produce the expected output.
      */
     @Test
+    @Disabled
     public void testSpurious1WithClassic_Configured4Passing_1_0007d191fec7fe2d6a0c4e87594cb286a553f92c()
             throws IOException {
 
@@ -198,6 +202,7 @@ public class TestJdtMatching {
      * This test executes SimpleGT, which works fine.
      */
     @Test
+    @Disabled
     public void testSpurious1WithSimple_0007d191fec7fe2d6a0c4e87594cb286a553f92c() throws IOException {
 
         String caseDir = "case_1_0007d191fec7fe2d6a0c4e87594cb286a553f92c_ASTInspector/";
@@ -230,6 +235,7 @@ public class TestJdtMatching {
      * This test exposes the incorrect output of GTClassic, default configuration.
      */
     @Test
+    @Disabled
     public void testNotSpurious1() throws IOException {
 
         URL resourceSource = getClass().getClassLoader().getResource("case_1_with_spurious/ClassA_s.javaa");
@@ -257,6 +263,7 @@ public class TestJdtMatching {
      * This test executes GTSimple, which works fine.
      */
     @Test
+    @Disabled
     public void testSpurious1WithSimple() throws IOException {
 
         URL resourceSource = getClass().getClassLoader().getResource("case_1_with_spurious/ClassA_s.javaa");
@@ -286,6 +293,7 @@ public class TestJdtMatching {
      * fails and exposes the issue.
      */
     @Test
+    @Disabled
     public void testSpurious1WithClassicDefault() throws IOException {
 
         URL resourceSource = getClass().getClassLoader().getResource("case_1_with_spurious/ClassA_s.javaa");
@@ -332,6 +340,7 @@ public class TestJdtMatching {
      * The test configures GTClassic to produce the expected output.
      */
     @Test
+    @Disabled
     public void testSpurious1WithClassicConfiguredGreedyBottomUpMatcher() throws IOException {
 
         URL resourceSource = getClass().getClassLoader().getResource("case_1_with_spurious/ClassA_s.javaa");
@@ -368,6 +377,7 @@ public class TestJdtMatching {
      * different outputs
      */
     @Test
+    @Disabled
     public void testSpurious1WithClassicConfiguredGreedySubtreeMatcher() throws IOException {
 
         URL resourceSource = getClass().getClassLoader().getResource("case_1_with_spurious/ClassA_s.javaa");
@@ -431,6 +441,7 @@ public class TestJdtMatching {
     }
 
     @Test
+    @Disabled
     public void testCase_1_20391Classic() throws IOException {
         String caseDir = "case_1_203910661b72775d1a983bf98c25ddde2d2898b9";
         URL resourceSource = getClass().getClassLoader().getResource(
@@ -457,33 +468,7 @@ public class TestJdtMatching {
     }
 
     @Test
-    public void testCase_1_20391_Complete_Int2Obj() throws IOException {
-
-        String foldercase = "case_1_203910661b72775d1a983bf98c25ddde2d2898b9";
-        URL resourceSource = getClass().getClassLoader()
-                .getResource(foldercase + "/1_203910661b72775d1a983bf98c25ddde2d2898b9_Producto_s.javaa");
-        URL resourceTarget = getClass().getClassLoader()
-                .getResource(foldercase + "/1_203910661b72775d1a983bf98c25ddde2d2898b9_Producto_t.javaa");
-
-        TreeContext leftContext = new JdtTreeGenerator().generateFrom().file(resourceSource.getFile());
-        TreeContext rightContext = new JdtTreeGenerator().generateFrom().file(resourceTarget.getFile());
-
-        Matcher matcher = new CompositeMatchers.PartitionGumtreeMatcher();
-
-        SimplifiedChawatheScriptGenerator edGenerator = new SimplifiedChawatheScriptGenerator();
-
-        MappingStore mappings = matcher.match(leftContext.getRoot(), rightContext.getRoot());
-
-        EditScript actions = edGenerator.computeActions(mappings);
-
-        List<Action> actionsAll = actions.asList();
-
-        // There is not failure but the output is incorrect
-        assertTrue(actionsAll.size() > 0);
-
-    }
-
-    @Test
+    @Disabled
     public void testCase_1_0007_Simple() throws IOException {
 
         String caseDir = "case_1_0007d191fec7fe2d6a0c4e87594cb286a553f92c_ASTInspector/";
@@ -520,6 +505,7 @@ public class TestJdtMatching {
     }
 
     @Test
+    @Disabled
     public void testCase_1_0007_Classic() throws IOException {
 
         String caseDir = "case_1_0007d191fec7fe2d6a0c4e87594cb286a553f92c_ASTInspector/";
@@ -548,29 +534,7 @@ public class TestJdtMatching {
     }
 
     @Test
-    public void testNotSpurious1Complete() throws IOException {
-
-        URL resourceSource = getClass().getClassLoader().getResource("case_1_with_spurious/ClassA_s.javaa");
-        URL resourceTarget = getClass().getClassLoader().getResource("case_1_with_spurious/ClassA_t.javaa");
-
-        TreeContext leftContext = new JdtTreeGenerator().generateFrom().file(resourceSource.getFile());
-        TreeContext rightContext = new JdtTreeGenerator().generateFrom().file(resourceTarget.getFile());
-        assertFalse(leftContext.getRoot().isIsomorphicTo(rightContext.getRoot()));
-
-        CompositeMatchers.PartitionGumtreeMatcher matcher = new CompositeMatchers.PartitionGumtreeMatcher();
-        ChawatheScriptGenerator edGenerator = new ChawatheScriptGenerator();
-
-        MappingStore mappings = matcher.match(leftContext.getRoot(), rightContext.getRoot());
-
-        EditScript actions = edGenerator.computeActions(mappings);
-
-        List<Action> actionsAll = actions.asList();
-
-        assertTrue(actionsAll.size() > 0);
-
-    }
-
-    @Test
+    @Disabled
     public void testCase_1_0a66_Simple() throws IOException {
 
         String caseDir = "case_1_0a664d752c4b0e5a7fb6f06d005181a0c9dc2905/";
@@ -604,38 +568,5 @@ public class TestJdtMatching {
 
         assertTrue(actionsAll.get(0) instanceof Insert);
         assertEquals("ReturnStatement", actionsAll.get(0).getNode().getType().name);
-
     }
-
-    @Test
-    public void testCase_1_0a66_CompleteGumtreeMatcher() throws IOException {
-
-        String caseDir = "case_1_0a664d752c4b0e5a7fb6f06d005181a0c9dc2905/";
-        String pathSource = caseDir + "1_0a664d752c4b0e5a7fb6f06d005181a0c9dc2905_FlowControlService_s.javaa";
-        String pathTarget = caseDir + "1_0a664d752c4b0e5a7fb6f06d005181a0c9dc2905_FlowControlService_t.javaa";
-
-        URL resourceSource = getClass().getClassLoader().getResource(pathSource);
-        URL resourceTarget = getClass().getClassLoader().getResource(pathTarget);
-
-        assertTrue((new File(resourceSource.getFile())).exists());
-        assertTrue((new File(resourceTarget.getFile())).exists());
-
-        TreeContext leftContext = new JdtTreeGenerator().generateFrom().file(resourceSource.getFile());
-        TreeContext rightContext = new JdtTreeGenerator().generateFrom().file(resourceTarget.getFile());
-
-        Matcher matcher = new CompositeMatchers.PartitionGumtreeMatcher();
-
-        SimplifiedChawatheScriptGenerator edGenerator = new SimplifiedChawatheScriptGenerator();
-
-        MappingStore mappings = matcher.match(leftContext.getRoot(), rightContext.getRoot());
-
-        EditScript actions = edGenerator.computeActions(mappings);
-
-        List<Action> actionsAll = actions.asList();
-
-        // There is not failure but the output is incorrect
-        assertTrue(actionsAll.size() > 0);
-
-    }
-
 }

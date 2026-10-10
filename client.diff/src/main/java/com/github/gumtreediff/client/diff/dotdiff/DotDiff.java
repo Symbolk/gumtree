@@ -21,75 +21,144 @@
 package com.github.gumtreediff.client.diff.dotdiff;
 
 import com.github.gumtreediff.actions.Diff;
+import com.github.gumtreediff.actions.TreeClassifier;
+
+import com.github.gumtreediff.client.Option;
 import com.github.gumtreediff.client.Register;
 import com.github.gumtreediff.client.diff.AbstractDiffClient;
 import com.github.gumtreediff.matchers.Mapping;
-import com.github.gumtreediff.matchers.MappingStore;
 import com.github.gumtreediff.tree.Tree;
 import com.github.gumtreediff.tree.TreeContext;
 
+import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 
-@Register(description = "A dot diff client", options = AbstractDiffClient.DiffOptions.class)
-public final class DotDiff extends AbstractDiffClient<AbstractDiffClient.DiffOptions> {
+@Register(description = "A dot diff client", options = DotDiff.DotDiffOptions.class)
+public final class DotDiff extends AbstractDiffClient<DotDiff.DotDiffOptions> {
+    private final Diff diff;
+    private final TreeClassifier classifier;
 
     public DotDiff(String[] args) {
         super(args);
+        try {
+            this.diff = getDiff();
+            classifier = diff.createAllNodeClassifier();
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void run() throws Exception {
         StringWriter writer = new StringWriter();
         writer.write("digraph G {\n");
-        writer.write("node [style=filled];\n");
-        writer.write("subgraph cluster_src {\n");
-        Diff diff = getDiff();
-        writeTree(diff.src, writer, diff.mappings);
-        writer.write("}\n");
-        writer.write("subgraph cluster_dst {\n");
-        writeTree(diff.dst, writer, diff.mappings);
-        writer.write("}\n");
-        for (Mapping m: diff.mappings) {
-            writer.write(String.format("%s -> %s [style=dashed]\n;",
+        writer.write("\tnode [style=filled];\n");
+        writer.write("\tsubgraph cluster_src {\n");
+        writeTree(diff.src, writer);
+        writer.write("\t}\n");
+        writer.write("\tsubgraph cluster_dst {\n");
+        writeTree(diff.dst, writer);
+        writer.write("\t}\n");
+        for (Mapping m: diff.mappings)
+            writer.write(String.format("\t%s -> %s [style=dashed];\n",
                     getDotId(diff.src, m.first), getDotId(diff.dst, m.second)));
-        }
         writer.write("}\n");
-        System.out.println(writer.toString());
+        System.out.println(writer);
     }
 
-    private void writeTree(TreeContext context, Writer writer, MappingStore mappings) throws Exception {
+    public static class DotDiffOptions extends AbstractDiffClient.DiffOptions {
+        int maxLabelLength = 30;
+
+        @Override
+        public Option[] values() {
+            return Option.Context.addValue(super.values(),
+                    new Option("--max-label-length", "Maximum label length (0 for unlimited).", 1) {
+                        @Override
+                        protected void process(String name, String[] args) {
+                            try {
+                                maxLabelLength = Integer.parseInt(args[0]);
+                            } catch (NumberFormatException e) {
+                                throw new Option.OptionException("Label length must be a non-negative integer.", e);
+                            }
+                            if (maxLabelLength < 0)
+                                throw new Option.OptionException("Label length must be a non-negative integer.");
+                        }
+                    }
+            );
+        }
+    }
+
+    private void writeTree(TreeContext context, Writer writer) throws Exception {
         for (Tree tree : context.getRoot().preOrder()) {
-            String fillColor = "red";
-            if (mappings.isSrcMapped(tree) || mappings.isDstMapped(tree))
-                fillColor = "blue";
-            writer.write(String.format("%s [label=\"%s\", color=%s];\n",
+            String fillColor = getDotColor(tree);
+            writer.write(String.format("\t\t%s [label=\"%s\", color=%s];\n",
                     getDotId(context, tree), getDotLabel(tree), fillColor));
             if (tree.getParent() != null)
-                writer.write(String.format("%s -> %s;\n",
+                writer.write(String.format("\t\t%s -> %s;\n",
                         getDotId(context, tree.getParent()), getDotId(context, tree)));
         }
+    }
 
+    private String getDotColor(Tree tree) {
+        if (classifier.getDeletedSrcs().contains(tree))
+            return "red";
+        else if (classifier.getInsertedDsts().contains(tree))
+            return "green";
+        else if (classifier.getMovedDsts().contains(tree) || classifier.getMovedSrcs().contains(tree))
+            return "blue";
+        else if (classifier.getUpdatedDsts().contains(tree) || classifier.getUpdatedSrcs().contains(tree))
+            return "orange";
+        else
+            return "lightgrey";
     }
 
     private String getDotId(TreeContext context, Tree tree) {
-        return "n_" + context.hashCode() + "_" + tree.hashCode();
+        String contextStr = context == diff.src ? "src" : "dst";
+        return "n_" + contextStr + "_" + tree.getMetrics().position;
     }
 
     private String getDotLabel(Tree tree) {
-        String label = tree.toString();
-        if (label.contains("\"") || label.contains("\\s"))
-            label = label
-                    .replaceAll("\"", "")
-                    .replaceAll("\\s", "")
-                    .replaceAll("\\\\", "");
-        if (label.length() > 30)
-            label = label.substring(0, 30);
-        return label;
+        return formatLabel(tree.toString(), opts.maxLabelLength);
+    }
+
+    static String formatLabel(String label, int maxLength) {
+        int codePointCount = label.codePointCount(0, label.length());
+        if (maxLength > 0 && codePointCount > maxLength) {
+            int prefixLength = maxLength > 3 ? maxLength - 3 : maxLength;
+            int end = label.offsetByCodePoints(0, prefixLength);
+            label = label.substring(0, end) + (maxLength > 3 ? "..." : "");
+        }
+
+        StringBuilder escaped = new StringBuilder(label.length());
+        for (int i = 0; i < label.length(); i++) {
+            char c = label.charAt(i);
+            switch (c) {
+                case '\\':
+                    escaped.append("\\\\");
+                    break;
+                case '"':
+                    escaped.append("\\\"");
+                    break;
+                case '\n':
+                    escaped.append("\\n");
+                    break;
+                case '\r':
+                    escaped.append("\\r");
+                    break;
+                case '\t':
+                    escaped.append("\\t");
+                    break;
+                default:
+                    escaped.append(c);
+            }
+        }
+        return escaped.toString();
     }
 
     @Override
-    protected DiffOptions newOptions() {
-        return new DiffOptions();
+    protected DotDiffOptions newOptions() {
+        return new DotDiffOptions();
     }
 }
